@@ -33,3 +33,13 @@ def scroll_chat_to_bottom(nonce):
     an st.iframe whose HTML is byte-for-byte identical to the previous run,
     so an unchanging script would only ever scroll once."""
     st.iframe(f"<script>/* nonce:{nonce} */\n{_read('scroll_bottom.js')}</script>", height=1)
+
+
+def bind_chat_history(nonce):
+    """Binds Up/Down history navigation to the chat input in the parent page."""
+    st.iframe(f"<script>/* nonce:{nonce} */\n{_read('chat_history.js')}</script>", height=1)
+
+
+def bind_chat_actions(nonce):
+    """Binds clipboard actions to the rendered chat messages."""
+    st.iframe(f"<script>/* nonce:{nonce} */\n{_read('chat_actions.js')}</script>", height=1)

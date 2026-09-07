@@ -21,14 +21,23 @@ for _dir in (DATA_DIR, UPLOAD_DIR, CHROMA_DIR):
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq").strip().lower()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_FALLBACK_MODELS = tuple(
+    model.strip()
+    for model in os.getenv(
+        "GROQ_FALLBACK_MODELS", "openai/gpt-oss-20b,qwen/qwen3.8-27b"
+    ).split(",")
+    if model.strip()
+)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
-# --- Embeddings (local Hugging Face sentence-transformer model, no API key
-# needed - downloads from the HF Hub on first use, then cached on disk) ---
+# --- Embeddings ---
+EMBEDDING_BACKEND = os.getenv("EMBEDDING_BACKEND", "hashing").strip().lower()
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "4096"))
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+EMBEDDING_LOAD_TIMEOUT_SECONDS = int(os.getenv("EMBEDDING_LOAD_TIMEOUT_SECONDS", "120"))
 
 # --- RAG tuning knobs ---
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "800"))

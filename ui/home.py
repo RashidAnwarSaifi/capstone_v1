@@ -1,13 +1,14 @@
 """Home / chat page: message history, agent picker, and the send flow."""
 
 from datetime import datetime
+from html import escape
 
 import streamlit as st
 
 from agents.registry import AGENTS, DEFAULT_AGENT_KEYS, list_agents
 from llm.factory import get_llm
 from ui.state import get_active_conversation, get_vectorstore, request_save
-from ui.styles import scroll_chat_to_bottom
+from ui.styles import bind_chat_actions, bind_chat_history, scroll_chat_to_bottom
 from utils.guardrails import ValidationError, validate_query
 
 
@@ -15,7 +16,13 @@ def render_home():
     st.title("How can I help you?")
     conv = get_active_conversation()
 
-    for message in conv["messages"]:
+    for message_index, message in enumerate(conv["messages"]):
+        if message["role"] == "user":
+            st.markdown(
+                f'<span class="chat-history-entry" data-role="user" '
+                f'data-content="{escape(message["content"], quote=True)}"></span>',
+                unsafe_allow_html=True,
+            )
         with st.chat_message(message["role"]):
             if message.get("agent"):
                 st.caption(f"🤖 {message['agent']}")
@@ -28,6 +35,24 @@ def render_home():
                     st.json(message["trace"])
             if message.get("timestamp"):
                 st.markdown(f'<div class="msg-timestamp">{message["timestamp"]}</div>', unsafe_allow_html=True)
+            if message["role"] == "user":
+                st.markdown(
+                    f'<button class="chat-copy-button" data-copy-kind="question" '
+                    f'data-copy-text="{escape(message["content"], quote=True)}" '
+                    f'title="Copy question"><span class="chat-copy-label">⧉</span></button>'
+                    f'<button class="chat-edit-button" '
+                    f'data-edit-text="{escape(message["content"], quote=True)}" '
+                    f'title="Edit question"><span>✎</span></button>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<span class="chat-action-marker">'
+                    '<button class="chat-copy-button" data-copy-kind="response" '
+                    'title="Copy formatted response"><span class="chat-copy-label">⧉</span></button>'
+                    '</span>',
+                    unsafe_allow_html=True,
+                )
 
     pending = st.session_state.get("pending_turn")
     busy = pending is not None and pending.get("conv_id") == conv["id"]
@@ -73,6 +98,8 @@ def render_home():
                 )
 
     scroll_chat_to_bottom(len(conv["messages"]))
+    bind_chat_history(len(conv["messages"]))
+    bind_chat_actions(len(conv["messages"]))
 
     if busy:
         _process_pending_turn(conv, pending)
@@ -83,20 +110,22 @@ def render_home():
         return
 
     try:
-        query = validate_query(query)
+        _queue_question(conv, query, selected_agents)
     except ValidationError as e:
         st.error(str(e))
         return
+    st.rerun()
 
+
+def _queue_question(conv: dict, query: str, selected_agents: list[str]) -> None:
+    query = validate_query(query)
     conv["messages"].append(
         {"role": "user", "content": query, "timestamp": datetime.now().strftime("%I:%M %p")}
     )
     if conv["title"] in ("New chat", "", None):
         conv["title"] = query[:40] + ("..." if len(query) > 40 else "")
     request_save("conversations_dirty")
-
     st.session_state.pending_turn = {"conv_id": conv["id"], "query": query, "agents": selected_agents}
-    st.rerun()
 
 
 def _process_pending_turn(conv: dict, pending: dict):

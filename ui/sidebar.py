@@ -7,7 +7,7 @@ from ui.state import new_conversation_dict, request_save
 NAV_ITEMS = [
     ("home", "💬 Home"),
     ("agents", "🤖 Agents"),
-    ("sources", "📁 Sources"),
+    ("sources", "📁 Document Upload"),
     ("settings", "⚙️ Settings"),
     ("architecture", "📐 Architecture"),
     ("instructions", "📖 Instructions"),

@@ -18,9 +18,9 @@ class GroqLLM(BaseLLM):
         self._client = Groq(api_key=api_key, timeout=_TIMEOUT_SECONDS)
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        def _call():
+        def _call(model: str):
             return self._client.chat.completions.create(
-                model=self.model,
+                model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -28,8 +28,15 @@ class GroqLLM(BaseLLM):
                 temperature=0.2,
             )
 
-        try:
-            response = call_with_timeout(_call, _TIMEOUT_SECONDS)
-        except Exception as e:
-            raise RuntimeError(f"Could not get a response from Groq: {e}") from e
-        return response.choices[0].message.content.strip()
+        models = (self.model,) + tuple(
+            model for model in settings.GROQ_FALLBACK_MODELS if model != self.model
+        )
+        errors = []
+        for model in models:
+            try:
+                return call_with_timeout(lambda: _call(model), _TIMEOUT_SECONDS).choices[0].message.content.strip()
+            except Exception as error:
+                errors.append(f"{model}: {error}")
+                if "model_not_found" not in str(error) and "does not exist" not in str(error):
+                    break
+        raise RuntimeError("Could not get a response from Groq. " + " | ".join(errors)) from None

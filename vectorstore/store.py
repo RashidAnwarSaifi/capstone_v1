@@ -19,18 +19,41 @@ class VectorStore:
         self._client = chromadb.PersistentClient(path=str(settings.CHROMA_DIR))
         self._collection = self._client.get_or_create_collection(_COLLECTION_NAME)
         self._embedder = None  # lazy: only load the HF model once embedding is actually needed
+        self._embedding_dimension_checked = False
 
     def _embed(self, texts: list[str]) -> list[list[float]]:
         if self._embedder is None:
             self._embedder = get_embedder()
         return self._embedder.embed(texts)
 
-    def add_documents(self, chunks: list[str], source: str) -> int:
+    def _ensure_embedding_dimension(self) -> None:
+        if self._embedding_dimension_checked:
+            return
+        self._embedding_dimension_checked = True
+        if self._collection.count() == 0:
+            return
+
+        stored = self._collection.get(include=["embeddings"])
+        stored_embeddings = stored.get("embeddings")
+        if stored_embeddings is None or len(stored_embeddings) == 0:
+            return
+        current_dimension = len(self._embed([""])[0])
+        if len(stored_embeddings[0]) == current_dimension:
+            return
+
+        documents = self._collection.get(include=["documents", "metadatas"])
+        self._client.delete_collection(_COLLECTION_NAME)
+        self._collection = self._client.get_or_create_collection(_COLLECTION_NAME)
+        self._add_documents(
+            documents.get("documents") or [],
+            documents.get("metadatas") or [],
+        )
+
+    def _add_documents(self, chunks: list[str], metadatas: list[dict]) -> int:
         if not chunks:
             return 0
         embeddings = self._embed(chunks)
-        ids = [f"{source}-{uuid.uuid4().hex[:8]}-{i}" for i in range(len(chunks))]
-        metadatas = [{"source": source} for _ in chunks]
+        ids = [f"document-{uuid.uuid4().hex[:8]}-{i}" for i in range(len(chunks))]
         self._collection.add(
             ids=ids,
             embeddings=embeddings,
@@ -39,9 +62,16 @@ class VectorStore:
         )
         return len(chunks)
 
+    def add_documents(self, chunks: list[str], source: str) -> int:
+        if not chunks:
+            return 0
+        self._ensure_embedding_dimension()
+        return self._add_documents(chunks, [{"source": source} for _ in chunks])
+
     def query(
         self, query_text: str, top_k: int = None, sources: list[str] | None = None
     ) -> list[dict]:
+        self._ensure_embedding_dimension()
         top_k = top_k or settings.TOP_K
         if self._collection.count() == 0:
             return []

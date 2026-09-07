@@ -44,7 +44,7 @@ def render_instructions():
 
 
 def render_sources():
-    st.title("Sources")
+    st.title("Document Upload")
 
     uploaded_files = st.file_uploader(
         "Upload documents (PDF, TXT, CSV, XLSX)",
