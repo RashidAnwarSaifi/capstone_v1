@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body>
+<script>
+  const DB_NAME = "capstone_genai_db";
+  const STORE_NAME = "kv";
+
+  function postToStreamlit(type, payload) {
+    window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, payload), "*");
+  }
+
+  function setComponentValue(value) {
+    postToStreamlit("streamlit:setComponentValue", { value: value, dataType: "json" });
+  }
+
+  function setFrameHeight(height) {
+    postToStreamlit("streamlit:setFrameHeight", { height: height });
+  }
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = function (e) {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      req.onsuccess = function (e) { resolve(e.target.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  function getOne(store, key) {
+    return new Promise(function (resolve, reject) {
+      const req = store.get(key);
+      req.onsuccess = function () { resolve(req.result === undefined ? null : req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  async function handleArgs(args) {
+    const action = args.action;
+    const storageKey = args.storage_key;
+    const storageKeys = args.storage_keys;
+    const value = args.value;
+
+    try {
+      const db = await openDb();
+      const mode = action === "set" || action === "delete" ? "readwrite" : "readonly";
+      const tx = db.transaction(STORE_NAME, mode);
+      const store = tx.objectStore(STORE_NAME);
+
+      if (action === "get") {
+        setComponentValue(await getOne(store, storageKey));
+      } else if (action === "get_multi") {
+        const result = {};
+        for (const k of storageKeys) {
+          result[k] = await getOne(store, k);
+        }
+        setComponentValue(result);
+      } else if (action === "set") {
+        const req = store.put(value, storageKey);
+        // Echo the caller's confirm_token back so Python can tell this write
+        // apart from a stale confirmation left over from an earlier one to
+        // the same key (see storage/indexeddb.py's module docstring).
+        req.onsuccess = function () { setComponentValue({ confirm_token: args.confirm_token }); };
+        req.onerror = function () { setComponentValue({ __error__: String(req.error) }); };
+      } else if (action === "delete") {
+        const req = store.delete(storageKey);
+        req.onsuccess = function () { setComponentValue(true); };
+        req.onerror = function () { setComponentValue({ __error__: String(req.error) }); };
+      } else {
+        setComponentValue({ __error__: "unknown action: " + action });
+      }
+    } catch (e) {
+      setComponentValue({ __error__: String(e) });
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    const data = event.data;
+    if (!data || !data.type) return;
+    if (data.type === "streamlit:render") {
+      handleArgs(data.args || {});
+    }
+  });
+
+  postToStreamlit("streamlit:componentReady", { apiVersion: 1 });
+  setFrameHeight(1);
+</script>
+</body>
+</html>

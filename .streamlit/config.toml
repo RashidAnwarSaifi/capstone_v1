@@ -1,0 +1,6 @@
+[browser]
+# Streamlit's own anonymous usage-stats telemetry (posts a summary of which
+# st.* commands were called to a Streamlit/Segment-backed collector on
+# every page load) - disabled so this app makes no outbound network calls
+# other than the ones it explicitly needs (the configured LLM provider).
+gatherUsageStats = false

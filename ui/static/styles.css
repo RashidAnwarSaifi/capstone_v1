@@ -1,0 +1,106 @@
+/* Chat input card is pinned to the true bottom of the browser viewport, so
+   scrolling the conversation never moves or hides it. `left` is kept in
+   sync with the sidebar's actual width by sidebar_sync.js, so the bar never
+   overlaps the sidebar and adjusts if the sidebar is resized or collapsed. */
+div.st-key-chat_input_bar {
+  position: fixed !important;
+  left: var(--sidebar-w, 0px);
+  /* Streamlit's own container CSS sets width:100%; with left+right both
+     specified too, the spec says the browser drops `right` in favor of
+     that width, over-extending the bar past the viewport edge. Forcing
+     width ourselves (relative to the viewport, since that's the fixed
+     element's containing block) avoids that. */
+  width: calc(100% - var(--sidebar-w, 0px)) !important;
+  bottom: 0;
+  background-color: var(--background-color, #ffffff);
+  z-index: 999;
+  padding: 0.5rem 2rem 1rem 2rem;
+  box-sizing: border-box;
+}
+
+/* Leave room at the bottom of the scrollable content so the last message
+   isn't hidden behind the fixed input bar. */
+div[data-testid="stMainBlockContainer"] {
+  padding-bottom: 11rem;
+}
+
+/* Trim the empty space above the sidebar's brand heading, and nudge the
+   heading itself up a bit further on top of that. */
+section[data-testid="stSidebar"] div[data-testid="stSidebarContent"],
+section[data-testid="stSidebar"] div[data-testid="stSidebarUserContent"] {
+  padding-top: 0rem !important;
+  /* ...and leave room at the bottom so the recent-chats list never sits
+     behind the fixed user badge below. */
+  padding-bottom: 4rem;
+}
+
+section[data-testid="stSidebar"] h3 {
+  margin-top: -2.0rem;
+  margin-bottom: 0.25rem;
+}
+
+/* User name/initials pinned to the bottom of the sidebar - always visible,
+   regardless of how long the recent-chats list grows. Same fixed +
+   sidebar-width-sync technique as the chat input bar. */
+div.st-key-sidebar_user_badge {
+  position: fixed !important;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-w, 21rem);
+  background-color: var(--background-color, #ffffff);
+  border-top: 1px solid rgba(49, 51, 63, 0.15);
+  padding: 0.6rem 1rem;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+/* Send button overlaid inside the right edge of the text box, instead of
+   sitting next to it as a separate control. input_row wraps just the
+   text-input + button columns (not the agent/document selectors below),
+   so this doesn't affect the rest of the form. */
+div.st-key-input_row div[data-testid="stHorizontalBlock"] {
+  position: relative;
+  align-items: center;
+}
+
+div.st-key-input_row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:last-child {
+  position: absolute;
+  right: 0.35rem;
+  top: 0;
+  bottom: 0;
+  width: auto !important;
+  min-width: 0 !important;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+div.st-key-input_row input[type="text"] {
+  border-radius: 999px !important;
+  padding-right: 2.75rem !important;
+}
+
+div.st-key-send_btn button {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 1.3rem;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Rounded, padded "bubble" look for every message, on both sides - like a
+   real conversation instead of plain full-width text. Streamlit gives the
+   outer row (stChatMessage, not stChatMessageContent) its own background
+   for user messages, which showed through as a second, full-width band
+   behind the bubble - strip that so only the bubble itself is visible. */
+div[data-testid="stChatMessage"] {
+  background: transparent !important;
+}
+
+div[data-testid="stChatMessageContent"] {
+  background-color: #f3f2f8 !important;
+  border-radius: 16px !important;
+  padding: 0.65rem 1rem !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+}

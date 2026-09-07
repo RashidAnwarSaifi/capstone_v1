@@ -1,0 +1,24 @@
+[
+  {
+    "role": "user",
+    "content": "name"
+  },
+  {
+    "role": "assistant",
+    "content": "Based on the resume provided, the candidate's name is:\n\n**Kumud Singh**\n\nThe full professional designation shown is: Kumud Singh, B. Tech., CSM, ISTQB, SAFe® PO Foundational Certified\n\n(Source: Kumud Singh Resume_RBCPM.pdf)",
+    "sources": [
+      "Kumud Singh Resume_RBCPM.pdf"
+    ]
+  },
+  {
+    "role": "user",
+    "content": "qualification"
+  },
+  {
+    "role": "assistant",
+    "content": "Based on the resume provided, here are Kumud Singh's qualifications:\n\n## Educational Qualifications:\n- **Bachelor of Technology in Computer Science** - UP Technical University, India (2008)\n- **Diploma in Electronics Engineering** - Govt. Polytechnic Gorakhpur, India (2004)\n\n## Professional Certifications:\n- **CSM (Certified Scrum Master)**\n- **ISTQB (International Software Testing Qualifications Board)**\n- **SAFe® PO (Product Owner) Foundational Certified**\n\n## Technical Proficiencies:\n- Salesforce marketing cloud (SFMC), SF Data cloud, SF loyalty\n- SAFe® CSM Certified\n- Advanced Excel, MPP\n- Core Java, SOAP UI, Postman\n- CD-Pilot GITHUB, Jenkins\n- Unix, SQL\n- HP ALM, JIRA, Confluence\n\n## Professional Experience:\n- **18+ years of experience** in project and program management, leading enterprise technology transformation initiatives across Banking, Capital Markets, Telecommunications, CRM, Payments, Billing, and Digital platforms\n\n(Source: Kumud Singh Resume_RBCPM.pdf)",
+    "sources": [
+      "Kumud Singh Resume_RBCPM.pdf"
+    ]
+  }
+]

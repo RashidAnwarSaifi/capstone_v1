@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Rashid A Saifi GenAI - Architecture</title>
+<style>
+body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 2rem; color: #1a1a1a; background: #fafafa; }
+h1 { font-size: 1.4rem; }
+.caption { color: #666; margin-bottom: 1.5rem; }
+.mermaid { background: #ffffff; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; }
+noscript, .fallback { display: none; }
+.legend { margin-top: 1rem; font-size: 0.85rem; color: #666; }
+</style>
+</head>
+<body>
+<h1>Rashid A Saifi GenAI - Architecture</h1>
+<p class="caption">
+  Editable diagram-as-code (Mermaid). Requires internet access once, to load
+  the renderer from a CDN (<code>cdn.jsdelivr.net</code>) - if that's blocked
+  on your network, paste the source block below into
+  <a href="https://mermaid.live" target="_blank" rel="noopener">mermaid.live</a> instead.
+</p>
+
+<pre class="mermaid">
+flowchart TB
+  UI["Browser - Streamlit UI<br/>Pages: Home · Agents · Sources · Settings<br/>Chat form, agent + document pickers"]
+  IDB["Browser - IndexedDB<br/>conversations<br/>llm_overrides (provider/model/keys)"]
+  APP["app.py - Streamlit server process<br/>Session state · sidebar nav · conv. persistence<br/>>storage/indexeddb.py bridge (custom component)"]
+
+  subgraph AGENTS ["agents/registry.py - selectable, single or multi"]
+    QA["QA Agent<br/>plan -> retrieve -> reason -> validate"]
+    SUMM["Summarizer Agent<br/>retrieve -> bullet-point summary"]
+    FACT["Fact-Checker Agent<br/>draft -> claim-by-claim check"]
+  end
+
+  LLM["llm/factory.py<br/>get_llm(overrides)"]
+  GROQ["Groq (default)"]
+  GEMINI["Gemini (secondary)"]
+
+  ING["ingestion/<br/>loaders.py: PDF/TXT/CSV/XLSX -> text<br/>chunker.py: text -> overlapping chunks"]
+  VS["vectorstore/store.py<br/>Chroma: add / query / delete / clear"]
+  EMB["vectorstore/embeddings.py<br/>Hugging Face sentence-transformer model"]
+
+  UPLOADS["data/uploads/"]
+  CHROMA["data/chroma/"]
+  CFG[".env -> config/settings.py<br/>LLM_PROVIDER, chunk size, top-k, embedding model, ..."]
+
+  UI <--> APP
+  IDB <--> APP
+  APP --> QA
+  APP --> SUMM
+  APP --> FACT
+
+  QA -- "generate()" --> LLM
+  SUMM -- "generate()" --> LLM
+  FACT -- "generate()" --> LLM
+  QA -- "retrieve/query()" --> ING
+  SUMM -- "retrieve/query()" --> VS
+  FACT -- "retrieve/query()" --> VS
+
+  LLM --> GROQ
+  LLM --> GEMINI
+
+  ING -- "chunks" --> VS
+  EMB -- "embed()" --> VS
+  ING --> UPLOADS
+  VS --> CHROMA
+
+  CFG -.-> LLM
+  CFG -.-> ING
+  CFG -.-> VS
+
+  classDef client fill:#e8f0fe,stroke:#4a4a4a;
+  classDef server fill:#eef7ee,stroke:#4a4a4a;
+  classDef agents fill:#fff4e5,stroke:#4a4a4a;
+  classDef llm fill:#fde8e8,stroke:#4a4a4a;
+  classDef rag fill:#eee5fd,stroke:#4a4a4a;
+  classDef storage fill:#f0f0f0,stroke:#4a4a4a;
+
+  class UI,IDB client;
+  class APP server;
+  class QA,SUMM,FACT agents;
+  class LLM,GROQ,GEMINI llm;
+  class ING,VS,EMB rag;
+  class UPLOADS,CHROMA,CFG storage;
+</pre>
+
+<p class="legend">Solid arrows = call/data flow &nbsp;&nbsp; Dashed arrows = config read</p>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, securityLevel: "loose" });
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Direct dependencies of this project, pinned to the versions it was built
+# and tested against. Transitive dependencies are resolved by pip.
+
+# --- Web UI ---
+streamlit==1.62.0
+
+# --- Configuration (.env loading) ---
+python-dotenv==1.2.3
+
+# --- LLM providers (see llm/factory.py; only the selected one is used) ---
+# Default is "groq"; "gemini" is the secondary option.
+groq==1.7.0
+google-generativeai==0.8.6
+
+# --- Document ingestion ---
+pypdf==6.16.2             # PDF text extraction
+pandas==3.0.5            # CSV / Excel parsing
+openpyxl==3.1.5          # pandas engine for .xlsx
+xlrd==2.0.2              # pandas engine for legacy .xls
+
+# --- Vector store + embeddings ---
+chromadb==1.5.9
+sentence-transformers==6.0.0  # Hugging Face embedding model (see vectorstore/embeddings.py)
